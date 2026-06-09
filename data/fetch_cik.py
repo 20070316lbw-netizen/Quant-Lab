@@ -1,5 +1,5 @@
 # 用于获取 EDGAR 的cik映射表
-# https://www.sec.gov/files/company_tickers.json
+# url = https://www.sec.gov/files/company_tickers.json
 
 import requests
 import sys
