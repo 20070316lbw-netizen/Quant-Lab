@@ -1,6 +1,6 @@
 # 用来抓取 EDGAR 股票
 
-# url = f"https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/StockholdersEquity.json"
+# url = "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/StockholdersEquity.json"
 # 这里硬编码了 AAPL 的股票代码 0000320193,原因是他只吃 10 位数字, 需要手动补齐
 
 import requests
