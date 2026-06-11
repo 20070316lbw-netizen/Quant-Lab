@@ -6,9 +6,8 @@ from loguru import logger
 from pathlib import Path
 from datetime import date
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from config import DATABASE_PATH, get_duckdb
-from fetch_stock import _fetch_stock
+from pipeline.source.yahoo import _fetch_stock
 
 
 def _create_table(con: duckdb.DuckDBPyConnection) -> None:

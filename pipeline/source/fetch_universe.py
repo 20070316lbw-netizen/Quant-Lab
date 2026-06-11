@@ -6,8 +6,6 @@ from pathlib import Path
 import pandas as pd 
 from loguru import logger
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
 from config import PROJECT_ROOT, SP500_CACHE_PATH
 from database import get_last_date
 
