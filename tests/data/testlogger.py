@@ -1,14 +1,9 @@
 import requests
-import sys
 from io import StringIO
-import time
-from pathlib import Path
-import pandas as pd 
+import pandas as pd
 from loguru import logger
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
-
-from config import PROJECT_ROOT, SP500_CACHE_PATH
+from pipeline.config import PROJECT_ROOT, SP500_CACHE_PATH
 
 URL = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
 

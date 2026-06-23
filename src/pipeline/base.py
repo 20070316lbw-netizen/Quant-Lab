@@ -19,4 +19,4 @@ class DataSource(ABC):
         Returns:
             pd.DataFrame: 数据内容, 列结构由具体实现定义并在其 docstring 中声明。
         """
-        ...
+        raise NotImplementedError
