@@ -22,12 +22,11 @@ class FetchEdgar(DataSource):
     def fetch(self) -> pd.DataFrame:
         cik_map = self._load_cik_map()
 
+        # TODO: 临时调试输出，后续接入 pipeline 时应改成 logger.debug 或删除
         print(cik_map)
 
+        # TODO: 当前 fetch 只返回 CIK 映射表，还没有真正抓取 companyconcept facts
         return cik_map
-
-
-        ...
 
     def _load_cik_map(self) -> pd.DataFrame:
 
@@ -38,6 +37,7 @@ class FetchEdgar(DataSource):
         # 比如用 ticker 那列 set_index，然后取 cik 列（此时是 Series），Series 上有个 to_dict() 方法
 
         try:
+            # TODO: 增加 timeout，避免网络卡住时请求无限等待
             req = requests.get(CIK_URL, headers = HEADERS)
             req.raise_for_status()
 
@@ -50,6 +50,7 @@ class FetchEdgar(DataSource):
 
             return cik_map
 
+        # TODO: 这里捕获的是 Python 内置 ConnectionError，requests 的网络异常应捕获 requests.RequestException
         except ConnectionError as e:
             logger.error(f"抓取失败 -{e}")
             raise
