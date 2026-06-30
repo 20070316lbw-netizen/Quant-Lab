@@ -3,7 +3,7 @@ from io import StringIO
 import pandas as pd
 from loguru import logger
 
-from pipeline.config import PROJECT_ROOT, SP500_CACHE_PATH
+from quant_lab.config import PROJECT_ROOT, SP500_CACHE_PATH
 
 URL = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
 

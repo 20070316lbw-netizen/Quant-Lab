@@ -1,4 +1,4 @@
-from pipeline.source.edgar import FetchEdgar
+from quant_lab.data.edgar import FetchEdgar
 from loguru import logger
 
 def get_dataframe_and_output_example() -> str:

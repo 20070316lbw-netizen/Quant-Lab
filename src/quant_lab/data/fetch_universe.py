@@ -8,7 +8,7 @@ import pandas as pd
 import requests
 from loguru import logger
 
-from pipeline.base import DataSource
+from quant_lab.data.loader import DataSource
 
 _WIKI_URL = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
 

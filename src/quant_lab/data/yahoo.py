@@ -7,8 +7,8 @@ import yfinance as yf
 
 from loguru import logger
 
-from pipeline.base import DataSource
-from pipeline.error import YahooFetchError
+from quant_lab.data.loader import DataSource
+from quant_lab.error import YahooFetchError
 
 # 入库顺序定义: fetch() 严格产出这个顺序, 后续直接对应 SELECT * 建表
 OHLCV_COLUMNS = ["date", "ticker", "open", "high", "low", "close", "volume"]
@@ -68,7 +68,7 @@ class YahooPrices(DataSource):
 
 
 if __name__ == "__main__":
-    from pipeline.config import TEMP_DIR
+    from quant_lab.config import TEMP_DIR
     TEMP_DIR.parent.mkdir(parents=True, exist_ok=True)
     Y = YahooPrices("AAPL")
     raw = Y.fetch()
