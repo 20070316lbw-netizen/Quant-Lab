@@ -27,4 +27,4 @@ def get_duckdb(read_only: bool = False) -> duckdb.DuckDBPyConnection:
         后续可统一从这里注入 DuckDB 配置(PRAGMA、线程数、只读模式等)
     """
     # TODO: DATABASE_PATH 对应目录不存在时会报错，后续可在这里自动创建目录
-    return duckdb.connect(str(DATABASE_PATH))
+    return duckdb.connect(str(DATABASE_PATH), read_only=read_only)
