@@ -7,7 +7,7 @@ import yfinance as yf
 
 from loguru import logger
 
-from quant_lab.data.loader import DataSource
+from quant_lab.sources.base import DataSource
 from quant_lab.error import YahooFetchError
 
 # 入库顺序定义: fetch() 严格产出这个顺序, 后续直接对应 SELECT * 建表
@@ -60,7 +60,7 @@ class YahooPrices(DataSource):
 
         # TODO: 当前 f-string 内外都使用双引号会导致语法错误，需改成 df['date'].max() 或调整外层引号
         logger.success(
-            f"{self.ticker}: {len(df)} 行, {df['date'].min()} ~ {df["date"].max()}"
+            f"{self.ticker}: {len(df)} 行, {df['date'].min()} ~ {df['date'].max()}"
         )
 
         return df

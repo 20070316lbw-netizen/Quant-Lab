@@ -3,7 +3,7 @@ from io import StringIO
 import pandas as pd
 from loguru import logger
 
-from quant_lab.data.loader import DataSource
+from quant_lab.sources.base import DataSource
 
 
 # ---------------- 定义全局常量 ---------------------

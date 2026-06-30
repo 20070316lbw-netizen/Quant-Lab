@@ -6,9 +6,11 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "duckdb>=1.5.3",
+    "lightgbm>=4.6.0",
     "loguru>=0.7.3",
     "lxml>=6.1.1",
     "pandas>=3.0.3",
+    "pydantic>=2.13.4",
     "requests>=2.34.2",
     "tabulate>=0.10.0",
     "yfinance>=1.4.1",
