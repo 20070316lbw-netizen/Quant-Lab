@@ -120,7 +120,6 @@ COIN,Coinbase,0001679788
 CL,Colgate-Palmolive,0000021665
 CMCSA,Comcast,0001166691
 FIX,Comfort Systems USA,0001035983
-CAG,Conagra Brands,0000023217
 COP,ConocoPhillips,0001163165
 ED,Consolidated Edison,0001047862
 STZ,Constellation Brands,0000016918
@@ -163,7 +162,7 @@ DUK,Duke Energy,0001326160
 DD,DuPont,0001666700
 ETN,Eaton Corporation,0001551182
 EBAY,eBay Inc.,0001065088
-SATS,EchoStar,0001415404
+ECHO,EchoStar,0001415404
 ECL,Ecolab,0000031462
 EIX,Edison International,0000827052
 EW,Edwards Lifesciences,0001099800
@@ -235,7 +234,8 @@ HSY,Hershey Company (The),0000047111
 HPE,Hewlett Packard Enterprise,0001645590
 HLT,Hilton Worldwide,0001585689
 HD,Home Depot (The),0000354950
-HON,Honeywell,0000773840
+HONA,Honeywell Aerospace,0002089271
+HON,Honeywell Technologies,0000773840
 HRL,Hormel Foods,0000048465
 HST,Host Hotels & Resorts,0001070750
 HWM,Howmet Aerospace,0000004281

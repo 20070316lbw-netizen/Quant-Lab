@@ -37,7 +37,7 @@ def build(ticker_limit: int = 503, period: str = "10y") -> None:
             logger.info(f"[{i} / {total}]   {row.ticker}")
 
             try:
-                prices = YahooPrices(row.ticker, period=period).fetch()
+                prices = YahooPrices(row ticker, period=period).fetch()
                 # TODO: 确认 upsert 的主键/冲突策略，避免重复 build 时产生重复行情数据
                 upsert(con, "prices", prices)
                 # TODO: 这块还需理解
