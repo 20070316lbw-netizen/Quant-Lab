@@ -1,7 +1,12 @@
-from quant_lab.data.edgar import FetchEdgar
+from __future__ import annotations
+
+import pandas as pd
 from loguru import logger
 
-def get_dataframe_and_output_example() -> str:
+from quant_lab.sources.edgar import FetchEdgar
+
+
+def get_dataframe_and_output_example() -> pd.DataFrame:
 
     """先拿到 FetchEdgar() 内部 fetch() 输出的 pd.Dataframe"""
     F = FetchEdgar()
@@ -26,11 +31,8 @@ def get_dataframe_and_output_example() -> str:
 
     for cik, name in zip(df["cik"], df["ticker"]):
         logger.info(f"目前在{cik} --- {name}")
+    return df
     
-
-
-
-
 
 
 if __name__ == "__main__":

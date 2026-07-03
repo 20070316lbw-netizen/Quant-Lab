@@ -47,11 +47,11 @@
 - [ ] `fetch()` 当前只返回 CIK 映射表,还没有真正抓 book equity / shares outstanding
 - [ ] `_load_cik_map` 返回 DataFrame,查询体验不如 dict(`cik_map["AAPL"]` 一步到位)。
       设计上可以 `set_index("ticker")["cik"].to_dict()` 转换,内部用 dict、对外看需要再定
-- [ ] 请求缺少 timeout,网络卡住时会无限等待
+- [X] 请求缺少 timeout,网络卡住时会无限等待
 - [ ] **实际 bug**:`except ConnectionError` 捕获的是 Python 内置异常,但 `requests` 抛出的是
       `requests.exceptions.RequestException` 及其子类,当前写法基本捕获不到 `requests` 的
       网络异常,应改成 `except requests.RequestException`
-- [ ] `fetch()` 里的 `print(cik_map)` 调试输出,接入 pipeline 前应改 `logger.debug` 或删除
+- [X] `fetch()` 里的 `print(cik_map)` 调试输出,接入 pipeline 前应改 `logger.debug` 或删除
 
 ## 🟢 数据源抽象层(`sources/base.py`)
 

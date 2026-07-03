@@ -13,7 +13,7 @@ def run_demo():
         table="prices",
         columns=["open", "close"],
         start="2024-01-02",
-        end="2024-01-05"
+        end="2024-01-05"    
     )
     print(f"生成的 SQL 语句:\n{req}")
 

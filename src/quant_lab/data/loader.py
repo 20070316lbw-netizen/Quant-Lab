@@ -1,11 +1,15 @@
 """数据库内代码为 RangeIndex , 为了让数据转化为 MultIndex, 我们在此采取只读策略输出 df"""
 from __future__ import annotations
 from typing import Literal
+from pprint import pprint
+
+import pandas as pd
 
 from pydantic import BaseModel, field_validator
 
 from quant_lab.config import get_duckdb
 from quant_lab.data.schema_registry import TABLES
+
 
 """
 Literal 非常坑:
@@ -91,3 +95,51 @@ def loader(req: RangeQuery):
         df = con.execute(sql, [req.start, req.end]).df()
 
         return df.set_index(TABLES[req.table].index)
+    
+
+def load_price_panel(
+        start       : str   = "2016-06-30",
+        end         : str   = "2026-06-30",
+        date_col    : str   = "date",
+        ticker_col  : str   = "ticker"
+) -> pd.DataFrame:
+    """读取 prices 表全部行情字段, 做类型转换后设置两层 index (date, ticker)
+
+    注意: loader() 内部已经把 date/ticker 设成了 index (见 TABLES[table].index),
+    所以这里拿到的 df 是没有 date/ticker 列的, 要用 index.get_level_values 取值,
+    不能再用 df["date"] 这种写法(会 KeyError)。
+    """
+    schema = TABLES["prices"]
+
+    # --------------------------- 数据读取,             return df
+    # select_columns 会自动把 index 列(date/ticker)拼进去, 这里只需要传
+    # 非 index 的行情字段(open/high/low/close/volume), 否则会漏掉真正的数据列
+    price_columns = [c for c in schema.columns if c not in schema.index]
+
+    req = RangeQuery(
+        table=schema.name,
+        columns=price_columns,
+        start=start,
+        end=end,
+    )
+    df = loader(req)
+    # ---------------------------
+
+    # --------------------------- 类型转换 + 重建 MultIndex   return df
+    dates   = pd.to_datetime(df.index.get_level_values(date_col))
+    tickers = df.index.get_level_values(ticker_col).astype("category")
+
+    df.index = pd.MultiIndex.from_arrays([dates, tickers], names=[date_col, ticker_col])
+    df = df.sort_index()
+
+    return df
+
+
+if __name__ == "__main__":
+    df = load_price_panel()
+    pprint(df)
+    
+
+
+
+

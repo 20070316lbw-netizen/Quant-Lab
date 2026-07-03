@@ -8,6 +8,7 @@ PROJECT_ROOT = PACKAGE_ROOT.parents[1]              # 仓库根目录
 DATABASE_PATH = PACKAGE_ROOT / "database" / "data.duckdb"
 SCHEMA = PACKAGE_ROOT / "database" / "schema.sql"
 SP500_CACHE_PATH = PACKAGE_ROOT / "database" / "sp500_ticker.csv"
+ARTIFACTS_DIR = PACKAGE_ROOT / "artifacts"          # 训练好的模型存这里(model.save() 的落点)
 
 
 # 类变量

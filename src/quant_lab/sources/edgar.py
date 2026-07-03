@@ -1,59 +1,49 @@
-import requests
-from io import StringIO
-import pandas as pd
+"""EDGAR 基本面数据源: 按 point-in-time 方式抓取公司财务字段(book equity / shares outstanding)"""
+
+from __future__ import annotations
+
 from loguru import logger
 
 from quant_lab.sources.base import DataSource
+from quant_lab.sources.fetch_universe import load_cached_universe
 
 
 # ---------------- 定义全局常量 ---------------------
-HEADERS = {"User-Agent": "liu 20070316lbw@gmail.com"}       # EDGAR 抓取要求
-CIK_URL = "https://www.sec.gov/files/company_tickers.json"      # 抓取 cik 映射表
-AAPL_URL = "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/StockholdersEquity.json"      # 抓取尝试
+HEADERS = {"User-Agent": "liu 20070316lbw@gmail.com"}       # EDGAR 要求所有接口(含 companyconcept)带 User-Agent
+URL_TEMPLATE = "https://data.sec.gov/api/xbrl/companyconcept/CIK{cik}/us-gaap/{concept}.json"
+CONCEPT = "StockholdersEquity"      # book equity, FF3 第一个要接入的字段, 先只跑通这一个
+
 
 class FetchEdgar(DataSource):
-    """整个抓取 EDGAR 的大类, 继承 base.py 下的 Datasource 类 """
+    """整个抓取 EDGAR 的大类, 继承 base.py 下的 Datasource 类。
+
+    CIK 直接复用 fetch_universe.py 缓存里 Wikipedia 自带的那一列,
+    不再单独抓 SEC 的 company_tickers.json 做 ticker -> CIK 映射:
+    两个数据源对同一家公司使用的 ticker 不一定一致(比如 EchoStar,
+    Wikipedia 用 ECHO, SEC 官方注册的却是 SATS), 多一层映射就多一个
+    对不上的风险; 而 Wikipedia 给出的 CIK 本身就是可以直接用的,
+    没必要绕这一圈。
+    """
 
     # TODO: 实现
-    # def _load_cik_map(self): ...
     # def _fetch_one(self, cik): ...
     # def _parse_facts(self, raw): ...
 
-    def fetch(self) -> pd.DataFrame:
-        cik_map = self._load_cik_map()
+    def fetch(self) -> dict[str, str]:
+        universe = load_cached_universe()
 
-        # TODO: 临时调试输出，后续接入 pipeline 时应改成 logger.debug 或删除
-        print(cik_map)
+        url_map = {
+            str(row.ticker): URL_TEMPLATE.format(cik=str(row.cik), concept=CONCEPT)
+            for row in universe.itertuples(index=False)
+        }
 
-        # TODO: 当前 fetch 只返回 CIK 映射表，还没有真正抓取 companyconcept facts
-        return cik_map
+        logger.info(f"正在批量生成网址中, 共 {len(url_map)} 只 ...")
+        logger.info(url_map)
 
-    def _load_cik_map(self) -> pd.DataFrame:
-
-        # TODO 
-        # 最终返回的是 Dataframe 而不是 dict
-        # "映射表"这个东西的天然形态就是 dict，查询就是 cik_map["AAPL"] 一步到位
-        # DataFrame 在转置后，ticker 和 cik 是两列，pandas 有现成路径
-        # 比如用 ticker 那列 set_index，然后取 cik 列（此时是 Series），Series 上有个 to_dict() 方法
-
-        try:
-            # TODO: 增加 timeout，避免网络卡住时请求无限等待
-            req = requests.get(CIK_URL, headers = HEADERS)
-            req.raise_for_status()
-
-            cik_map = pd.read_json(StringIO(req.text)).T
-
-            cik_map["cik"] = cik_map["cik_str"].astype(str).str.zfill(10)
-            # .str.zfill(10) 代表左边补零到 10 位
-            # pandas 要求你先用 .str 访问器,才能调 zfill、upper、replace 这些字符串方法
-            # 直接 .zfill(10) 会报错,因为那是单个字符串的方法,不是 Series 的
-
-            return cik_map
-
-        # TODO: 这里捕获的是 Python 内置 ConnectionError，requests 的网络异常应捕获 requests.RequestException
-        except ConnectionError as e:
-            logger.error(f"抓取失败 -{e}")
-            raise
+        # TODO: 当前 fetch 只返回 URL 映射表, 还没有真正抓取 companyconcept facts,
+        # 完成 _fetch_one / _parse_facts 之后, 这里最终应改回返回 pd.DataFrame,
+        # 与 DataSource 基类的 fetch() -> pd.DataFrame 契约保持一致
+        return url_map
 
 
 if __name__ == "__main__":
