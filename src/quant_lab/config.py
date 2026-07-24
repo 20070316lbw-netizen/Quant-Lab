@@ -1,5 +1,9 @@
-import duckdb
+from __future__ import annotations
+
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
 
 PACKAGE_ROOT = Path(__file__).resolve().parent      # src/quant_lab
 PROJECT_ROOT = PACKAGE_ROOT.parents[1]              # 仓库根目录
@@ -15,17 +19,43 @@ ARTIFACTS_DIR = PACKAGE_ROOT / "artifacts"          # 训练好的模型存这�
 OHLCV_COLUMNS = ["date", "ticker", "open", "high", "low", "close", "volume"]
 INDEX_COLUMNS = ["date", "ticker"]
 
-# TODO: 变量名叫 TEMP_DIR，但实际是文件路径，建议后续改名为 TEMP_FILE 或 TEMP_CSV_PATH
-TEMP_DIR = PROJECT_ROOT / "aapl.csv"
 
 
-def get_duckdb(read_only: bool = False) -> duckdb.DuckDBPyConnection:
-    """返回一个 DuckDB 连接。
+# 环境变量
+# 每个变量都是 os.environ.get(..., 默认值)
+load_dotenv()  # 读根目录的 .env 文件,把里面每一行 KEY=VALUE 写进 os.environ
+DB_NAME     : str           = os.environ.get("DB_NAME", "quant_lab")
+DB_HOST     : str | None    = os.environ.get("DB_HOST")                 # 不设就走本地 Unix socket
+DB_PORT     : int           = int(os.environ.get("DB_PORT", "5432"))
+DB_USER     : str | None    = os.environ.get("DB_USER")                 # 不设就用当前系统用户(trust 认证)
+DB_PASSWORD : str | None    = os.environ.get("DB_PASSWORD")
 
-    调用方负责关闭, 推荐用 with 语法自动关闭:
 
-    TODO:
-        后续可统一从这里注入 DuckDB 配置(PRAGMA、线程数、只读模式等)
-    """
-    # TODO: DATABASE_PATH 对应目录不存在时会报错，后续可在这里自动创建目录
-    return duckdb.connect(str(DATABASE_PATH), read_only=read_only)
+"""快捷留空:
+要跑测试库、或者部署到服务器上连另一个数据库,只需要在跑代码前设一下
+代码本身一行不用改:
+
+```bash
+DB_NAME=quant_db_test python src/sql/ingest/load_securities.py
+```
+"""
+
+"""写给以后的自己
+为什么 DB_HOST 默认是 None,而不是 "localhost"
+
+本地不设 host,psycopg 连的是 Unix domain socket,不是 TCP 的 localhost
+这两者是不同的连接方式:
+Unix socket 是同一台机器上进程间通过文件系统的一个特殊文件通信,不走网络协议栈
+比 TCP 连 127.0.0.1 更快,也不需要端口
+Homebrew 装的 Postgres 默认就监听在 Unix socket 上
+这也是为什么平时 psql quant_db 不用指定任何 host/port 就能连上
+
+所以这段代码的意思是:"没告诉我 host,就默认你在本机开发,直接走 socket";
+只有当你连远程数据库(比如以后上了云)时才会设 DB_HOST,
+这时才会真正用上下面的 TCP 连接参数
+
+为什么 user/password 也是可选的:
+跟之前搞清楚的一样,本地 Homebrew Postgres 走 trust 认证,
+直接对应你的系统用户名(liu),不需要密码
+所以这两个字段默认 None,只有连需要认证的远程库时才会填
+"""

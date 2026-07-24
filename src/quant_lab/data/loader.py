@@ -7,7 +7,7 @@ import pandas as pd
 
 from pydantic import BaseModel, field_validator
 
-from quant_lab.config import get_duckdb
+from quant_lab.connection import get_duckdb
 from quant_lab.data.schema_registry import TABLES
 
 

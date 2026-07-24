@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from loguru import logger
 
-from quant_lab.config import SP500_CACHE_PATH, DATABASE_PATH, get_duckdb
+from quant_lab.config import SP500_CACHE_PATH, DATABASE_PATH
+from quant_lab.connection import get_duckdb
 from quant_lab.storage.duckdb_store import init_schema, upsert
 from quant_lab.sources.yahoo import YahooPrices
 from quant_lab.sources.fetch_universe import SP500Universe

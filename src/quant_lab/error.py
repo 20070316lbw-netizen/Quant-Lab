@@ -12,7 +12,8 @@ class QuantLabError(Exception):
 class YahooFetchError(QuantLabError):
     """Yahoo 数据抓取相关的错误"""
 
-
+class WikiFetchError(QuantLabError):
+    """Wiki 数据抓取相关错误。"""
 
 class EdgarFetchError(QuantLabError):
     """EDGAR 数据抓取相关的错误。"""

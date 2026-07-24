@@ -1,4 +1,4 @@
-from quant_lab.config import get_duckdb
+from quant_lab.connection import get_duckdb
 with get_duckdb() as con:
     df = con.execute("SELECT date FROM prices LIMIT 5").df()
 
