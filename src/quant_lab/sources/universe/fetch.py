@@ -22,6 +22,8 @@ _BROWSER_UA = (
 
 _SEC_CIK_URL = "https://www.sec.gov/files/company_tickers.json"
 _SEC_HEADERS = {"User-Agent": "liu 20070316lbw@gmail.com"}
+_MIN_EXPECTED_UNIVERSE_SIZE = 400
+_MAX_EXPECTED_UNIVERSE_SIZE = 600
 
 
 class SP500UniverseMember(BaseModel):
@@ -134,7 +136,7 @@ def fetch_sp500_universe() -> list[SP500UniverseMember]:
 
     universe: list[SP500UniverseMember] = []
 
-    for _, row in table.iterrows():
+    for row_number, (_, row) in enumerate(table.iterrows()):
         """
         .iterrows() 会把每一行拿出来,返回 (索引, 该行数据) 这样的元组,
         用 _ 表示"我不关心索引值,只要行内容",
@@ -151,17 +153,24 @@ def fetch_sp500_universe() -> list[SP500UniverseMember]:
             )
 
         except ValidationError as exc:
-            """如果这一行校验失败(抛出 ValidationError),不会让整个程序崩溃,
-            而是用 logger.warning(...) 记一条警告日志,内容包括:
-
-            row.to_dict():把这行原始数据转成字典打印出来,方便你之后排查是哪行数据有问题
-            exc:具体的校验失败原因(比如"cik 字段应该是整数,但收到了字符串"之类)
-            """
-            logger.warning(f"跳过一条校验失败的记录: {row.to_dict()}, 原因: {exc}")
+            raise WikiFetchError(
+                f"第 {row_number} 行校验失败，拒绝使用不完整快照: "
+                f"{row.to_dict()}"
+            ) from exc
 
 
     if not universe:
         raise WikiFetchError("解析出的成分股列表为空, 页面结构可能变化")
+    if not (
+        _MIN_EXPECTED_UNIVERSE_SIZE
+        <= len(universe)
+        <= _MAX_EXPECTED_UNIVERSE_SIZE
+    ):
+        raise WikiFetchError(
+            f"成分股数量异常: {len(universe)}，"
+            f"预期范围 {_MIN_EXPECTED_UNIVERSE_SIZE}"
+            f"~{_MAX_EXPECTED_UNIVERSE_SIZE}"
+        )
 
     logger.info(f"成功抓取并且校验 {len(universe)} 条 S&P 成分股")
 

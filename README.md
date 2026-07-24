@@ -49,7 +49,7 @@
 
 ## 进度
 
-- [x] 数据层:价量(fetch_universe / fetch_stock / database)
+- [x] 数据层:价量(fetch_sp500_universe / fetch_stock / database)
 - [ ] 数据层:基本面(SEC EDGAR,point-in-time)← **当前焦点**
 - [ ] 因子计算层
 - [ ] 验证层

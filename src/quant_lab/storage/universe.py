@@ -3,9 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol, Sequence
 
+import duckdb
+import psycopg
+
 from quant_lab.error import UniverseLoadError
 from quant_lab.sources.universe import SP500UniverseMember
 from quant_lab.storage.backend import DatabaseTarget, connect, validate_target
+
+_DATABASE_ERRORS = (duckdb.Error, psycopg.Error)
 
 
 @dataclass(frozen=True)
@@ -188,6 +193,7 @@ def load_sp500_universe(
     validated_target = validate_target(target)
     adapter = _ADAPTERS[validated_target]
     connection = None
+    committed = False
 
     try:
         connection = connect(validated_target)
@@ -199,18 +205,17 @@ def load_sp500_universe(
             validated_target,
         )
         connection.commit()
+        committed = True
         return result
-    except UniverseLoadError:
-        raise
-    except Exception as exc:
-        if connection is not None:
-            try:
-                connection.rollback()
-            except Exception:
-                pass
+    except _DATABASE_ERRORS as exc:
         raise UniverseLoadError(
             f"sp500_universe 写入 {validated_target} 失败: {exc}"
         ) from exc
     finally:
         if connection is not None:
+            if not committed:
+                try:
+                    connection.rollback()
+                except _DATABASE_ERRORS:
+                    pass
             connection.close()

@@ -17,7 +17,7 @@ CONCEPT = "StockholdersEquity"      # book equity, FF3 第一个要接入的字�
 class FetchEdgar(DataSource):
     """整个抓取 EDGAR 的大类, 继承 base.py 下的 Datasource 类。
 
-    CIK 直接复用 fetch_universe.py 缓存里 Wikipedia 自带的那一列,
+    CIK 直接复用 sources/universe 缓存里 Wikipedia 自带的那一列,
     不再单独抓 SEC 的 company_tickers.json 做 ticker -> CIK 映射:
     两个数据源对同一家公司使用的 ticker 不一定一致(比如 EchoStar,
     Wikipedia 用 ECHO, SEC 官方注册的却是 SATS), 多一层映射就多一个

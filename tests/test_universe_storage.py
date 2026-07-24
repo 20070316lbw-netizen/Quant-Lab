@@ -86,6 +86,22 @@ def test_schema_initialization_is_idempotent_and_shared(duckdb_path):
             ORDER BY ordinal_position
             """
         ).fetchall()
+        column_types = con.execute(
+            """
+            SELECT table_name, column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name IN ('sp500_universe', 'prices')
+            ORDER BY table_name, ordinal_position
+            """
+        ).fetchall()
+        primary_keys = con.execute(
+            """
+            SELECT table_name, constraint_column_names
+            FROM duckdb_constraints()
+            WHERE constraint_type = 'PRIMARY KEY'
+            ORDER BY table_name
+            """
+        ).fetchall()
 
     assert {"sp500_universe", "prices"} <= tables
     assert universe_columns == [
@@ -101,6 +117,22 @@ def test_schema_initialization_is_idempotent_and_shared(duckdb_path):
         ("low",),
         ("close",),
         ("volume",),
+    ]
+    assert column_types == [
+        ("prices", "date", "DATE"),
+        ("prices", "ticker", "VARCHAR"),
+        ("prices", "open", "DOUBLE"),
+        ("prices", "high", "DOUBLE"),
+        ("prices", "low", "DOUBLE"),
+        ("prices", "close", "DOUBLE"),
+        ("prices", "volume", "BIGINT"),
+        ("sp500_universe", "ticker", "VARCHAR"),
+        ("sp500_universe", "company_name", "VARCHAR"),
+        ("sp500_universe", "cik", "VARCHAR"),
+    ]
+    assert primary_keys == [
+        ("prices", ["date", "ticker"]),
+        ("sp500_universe", ["ticker"]),
     ]
 
 

@@ -31,7 +31,7 @@
 - [x] ~~f-string 引号冲突~~:已核实,`f"...{df['date'].min()}..."` 外双内单引号类型不同,
       不会报错,原 TODO 注释可以删除
 
-## 🟡 数据层 · 标的池(`sources/fetch_universe.py`)
+## 🟡 数据层 · 标的池(`sources/universe/fetch.py`)
 
 - [ ] 增加 `requests.RequestException` 捕获,统一转换成项目内部异常类型
 - [ ] Wikipedia 页面结构变更后 `pd.read_html(...)[0]` 可能不再是成分股表,需要增加表结构校验
@@ -95,7 +95,7 @@
 
 ## 项目进度(与 README 对齐)
 
-- [x] 数据层:价量(`fetch_universe` / `YahooPrices` / database),核心功能可用,细节 TODO 见上
+- [x] 数据层:价量(`fetch_sp500_universe` / `YahooPrices` / database),核心功能可用,细节 TODO 见上
 - [ ] 数据层:基本面(SEC EDGAR, point-in-time)← **当前焦点,见上方 🔴 部分**
 - [ ] 因子计算层(`features/`, `labels/` 目前为空)
 - [ ] 验证层
