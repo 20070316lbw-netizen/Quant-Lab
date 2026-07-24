@@ -4,6 +4,7 @@ import duckdb
 import pandas as pd
 from loguru import logger
 
+
 # TODO: 还没有理解这个方法的大部分组件方法
 def upsert(con: duckdb.DuckDBPyConnection, table: str, df: pd.DataFrame) -> None:
     """把 df 幂等写入指定表。

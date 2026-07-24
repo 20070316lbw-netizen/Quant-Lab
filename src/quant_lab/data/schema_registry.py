@@ -1,9 +1,9 @@
 """数据字典, 声明系统里面有哪些表,每张表有哪些字段, 内置 `TABLE` 作为运行时配置"""
 
-from quant_lab.config import OHLCV_COLUMNS, INDEX_COLUMNS
-
-
 from dataclasses import dataclass
+
+from quant_lab.config import INDEX_COLUMNS, OHLCV_COLUMNS
+
 
 @dataclass(frozen=True)
 class TableSchema:

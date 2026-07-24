@@ -6,9 +6,9 @@ from loguru import logger
 from quant_lab.config import SP500_CACHE_PATH
 from quant_lab.connection import get_duckdb
 from quant_lab.error import QuantLabError
-from quant_lab.storage.duckdb_store import upsert
 from quant_lab.sources.universe import fetch_sp500_universe
 from quant_lab.sources.yahoo import YahooPrices
+from quant_lab.storage.duckdb_store import upsert
 
 
 def build(ticker_limit: int = 503, period: str = "10y") -> None:

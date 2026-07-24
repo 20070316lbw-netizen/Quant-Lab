@@ -1,15 +1,14 @@
 """数据库内代码为 RangeIndex , 为了让数据转化为 MultIndex, 我们在此采取只读策略输出 df"""
 from __future__ import annotations
-from typing import Literal
+
 from pprint import pprint
+from typing import Literal
 
 import pandas as pd
-
 from pydantic import BaseModel, field_validator
 
 from quant_lab.connection import get_duckdb
 from quant_lab.data.schema_registry import TABLES
-
 
 """
 Literal 非常坑:
