@@ -56,3 +56,24 @@
 
 ---
 
+## 数据库初始化与 Universe 同步
+
+PostgreSQL 和 DuckDB 共用 `db/schema` 中的表结构，但每次命令只操作一个
+明确指定的目标数据库。
+
+```bash
+# 初始化表结构
+python -m quant_lab.pipeline.init_db --target duckdb
+python -m quant_lab.pipeline.init_db --target postgres
+
+# 抓取并精确同步当前 S&P 500 universe
+python -m quant_lab.pipeline.load_universe --target duckdb
+python -m quant_lab.pipeline.load_universe --target postgres
+```
+
+PostgreSQL 连接读取 `DB_NAME`、`DB_HOST`、`DB_PORT`、`DB_USER` 和
+`DB_PASSWORD`；未提供 host 时使用本地 Unix socket。同步是当前快照语义：
+新增和变化成员会写入，已经退出本次快照的 ticker 会删除。空快照会被拒绝，
+不会清空已有表。
+
+---

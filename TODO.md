@@ -84,8 +84,8 @@
 
 ## 🗑️ 待清理
 
-- [ ] `tests/data/testlogger.py` + `tests/test_logger.py`:独立重复实现了一份 SP500
-      抓取逻辑,与 `sources/fetch_universe.py::SP500Universe` 功能重复,像早期探索代码,
+- [ ] `tests/data/testlogger.py`:独立重复实现了一份 SP500
+      抓取逻辑,与 `sources/universe/fetch.py::fetch_sp500_universe` 功能重复,像早期探索代码,
       建议删除或明确说明保留原因
 - [ ] `storage/paths.py`、`features/basic.py`、`labels/future_return.py`、
       `models/base.py`、`pipeline/predict.py`、`pipeline/train.py`:目前均为空文件占位,

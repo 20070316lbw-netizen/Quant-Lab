@@ -1,8 +1,27 @@
 import pytest
 import pandas as pd
 from pydantic import ValidationError
+import quant_lab.connection as connection_module
+from quant_lab.connection import get_duckdb
 from quant_lab.data.loader import RangeQuery, loader, build_sql
 from quant_lab.data.schema_registry import TABLES
+from quant_lab.storage import initialize_schema
+
+
+@pytest.fixture(autouse=True)
+def isolated_duckdb(tmp_path, monkeypatch):
+    database_path = tmp_path / "loader.duckdb"
+    monkeypatch.setattr(connection_module, "DATABASE_PATH", database_path)
+    initialize_schema("duckdb")
+    with get_duckdb() as con:
+        con.execute(
+            """
+            INSERT INTO prices
+                (date, ticker, open, high, low, close, volume)
+            VALUES
+                ('2024-01-02', 'AAPL', 185.0, 188.0, 183.0, 187.0, 100)
+            """
+        )
 
 
 def test_range_query_valid():

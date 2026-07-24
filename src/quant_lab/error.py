@@ -15,6 +15,15 @@ class YahooFetchError(QuantLabError):
 class WikiFetchError(QuantLabError):
     """Wiki 数据抓取相关错误。"""
 
+
+class SchemaInitializationError(QuantLabError):
+    """数据库 schema 初始化失败。"""
+
+
+class UniverseLoadError(QuantLabError):
+    """Universe 快照写入失败或输入不满足写入约束。"""
+
+
 class EdgarFetchError(QuantLabError):
     """EDGAR 数据抓取相关的错误。"""
 

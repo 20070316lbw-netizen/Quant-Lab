@@ -5,7 +5,7 @@ from __future__ import annotations
 from loguru import logger
 
 from quant_lab.sources.base import DataSource
-from quant_lab.sources.fetch_universe import load_cached_universe
+from quant_lab.sources.universe import load_cached_universe
 
 
 # ---------------- 定义全局常量 ---------------------

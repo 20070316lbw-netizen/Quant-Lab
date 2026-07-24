@@ -4,29 +4,7 @@ import duckdb
 import pandas as pd
 from loguru import logger
 
-
-# --------------- schema ----------------
-PRICE = """
-CREATE TABLE IF NOT EXISTS prices(
-    date    DATE,
-    ticker  VARCHAR,
-    open    DOUBLE,
-    high    DOUBLE,
-    low     DOUBLE,
-    close   DOUBLE,
-    volume  BIGINT,
-    PRIMARY KEY (date, ticker)
-)
-"""
-# ---------------------------------------
-
-def init_schema(con: duckdb.DuckDBPyConnection) -> None:
-    """建表"""
-    con.execute(PRICE)
-
-    logger.success("建表完成")
-
- # TODO: 还没有理解这个方法的大部分组件方法
+# TODO: 还没有理解这个方法的大部分组件方法
 def upsert(con: duckdb.DuckDBPyConnection, table: str, df: pd.DataFrame) -> None:
     """把 df 幂等写入指定表。
 
@@ -43,4 +21,3 @@ def upsert(con: duckdb.DuckDBPyConnection, table: str, df: pd.DataFrame) -> None
     finally:
         con.unregister("_staging")
     logger.success(f"{table}: 写入/更新 {len(df)} 行")
-    

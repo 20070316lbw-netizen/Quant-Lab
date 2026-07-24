@@ -1,4 +1,4 @@
-from quant_lab.config import get_duckdb
+from quant_lab.connection import get_duckdb
 with get_duckdb() as con:
     con.sql("SELECT COUNT(*), COUNT(DISTINCT ticker) FROM prices").show()
     con.sql("SELECT COUNT(*) FROM prices WHERE volume IS NULL").show()
