@@ -8,10 +8,10 @@ CREATE TABLE IF NOT EXISTS market_data.adj_daily_prices (
     trade_date   DATE NOT NULL,
     ticker       TEXT NOT NULL,
 
-    open         NUMERIC(18, 6),
-    high         NUMERIC(18, 6),
-    low          NUMERIC(18, 6),
-    close        NUMERIC(18, 6),
+    open         DOUBLE PRECISION,
+    high         DOUBLE PRECISION,
+    low          DOUBLE PRECISION,
+    close        DOUBLE PRECISION,
 
     volume       BIGINT,
     PRIMARY KEY (ticker, trade_date),

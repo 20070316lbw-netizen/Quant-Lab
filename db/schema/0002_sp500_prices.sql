@@ -8,15 +8,15 @@ CREATE TABLE IF NOT EXISTS market_data.daily_prices (
     trade_date      DATE NOT NULL,
     ticker          TEXT NOT NULL,
 
-    open            NUMERIC(18, 6),
-    high            NUMERIC(18, 6),
-    low             NUMERIC(18, 6),
-    close           NUMERIC(18, 6),
-    adj_close       NUMERIC(18, 6),
+    open            DOUBLE PRECISION,
+    high            DOUBLE PRECISION,
+    low             DOUBLE PRECISION,
+    close           DOUBLE PRECISION,
+    adj_close       DOUBLE PRECISION,
 
     volume          BIGINT,
-    dividends       NUMERIC(18, 6) NOT NULL DEFAULT 0,
-    stock_splits    NUMERIC(18, 6) NOT NULL DEFAULT 0,
+    dividends       DOUBLE PRECISION NOT NULL DEFAULT 0,
+    stock_splits    DOUBLE PRECISION NOT NULL DEFAULT 0,
 
     PRIMARY KEY (ticker, trade_date),
     CHECK (volume IS NULL OR volume >= 0),
