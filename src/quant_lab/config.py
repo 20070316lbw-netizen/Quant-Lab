@@ -19,7 +19,9 @@ OHLCV_COLUMNS = ["date", "ticker", "open", "high", "low", "close", "volume"]
 INDEX_COLUMNS = ["date", "ticker"]
 
 # schema 变量
-SCHEMA_UNIVERSE = PROJECT_ROOT / "db" / "schema" / "0001_sp500_universe.sql"
+SCHEMA_UNIVERSE     = PROJECT_ROOT / "db" / "schema" / "0001_sp500_universe.sql"
+SCHEMA_OLCHV        = PROJECT_ROOT / "db" / "schema" / "0002_sp500_prices.sql"
+SCHEMA_OLCHV_ADJ    = PROJECT_ROOT / "db" / "schema" / "0003_sp500_adj_prices.sql"
 
 # 环境变量
 # 每个变量都是 os.environ.get(..., 默认值)

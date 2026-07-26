@@ -1,6 +1,8 @@
--- PostgreSQL 和 DuckDB 共用这份 DDL。
--- 因此只使用两边都支持的基础类型与约束,不要在这里加入单库专属语法。
-CREATE TABLE IF NOT EXISTS sp500_universe (
+-- sp500_universe 股票池表
+-- 本表在 universe 下
+CREATE SCHEMA IF NOT EXISTS universe;
+
+CREATE TABLE IF NOT EXISTS universe.sp500_universe (
     -- ticker 是当前快照中的稳定业务键;重复同步时由它判断插入还是更新。
     ticker       VARCHAR(10) PRIMARY KEY,
     company_name TEXT NOT NULL,

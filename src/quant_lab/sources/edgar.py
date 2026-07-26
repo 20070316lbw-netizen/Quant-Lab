@@ -7,7 +7,6 @@ from loguru import logger
 from quant_lab.sources.base import DataSource
 from quant_lab.sources.universe import load_cached_universe
 
-
 # ---------------- 定义全局常量 ---------------------
 HEADERS = {"User-Agent": "liu 20070316lbw@gmail.com"}       # EDGAR 要求所有接口(含 companyconcept)带 User-Agent
 URL_TEMPLATE = "https://data.sec.gov/api/xbrl/companyconcept/CIK{cik}/us-gaap/{concept}.json"

@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import pandas as pd 
+import pandas as pd
 import yfinance as yf
-
 from loguru import logger
 
-from quant_lab.sources.base import DataSource
 from quant_lab.error import YahooFetchError
+from quant_lab.sources.base import DataSource
 
 # 入库顺序定义: fetch() 严格产出这个顺序, 后续直接对应 SELECT * 建表
 OHLCV_COLUMNS = ["date", "ticker", "open", "high", "low", "close", "volume"]
@@ -23,7 +22,7 @@ class YahooPrices(DataSource):
     returns 列: data, ticker, open, high, low, close, volume
     """
 
-    def __init__(self, ticker: str, period: str = "1y") -> None:
+    def __init__(self, *, ticker: str, period: str = "1y") -> None:
         self.ticker = ticker
         self.period = period
 
@@ -70,7 +69,7 @@ class YahooPrices(DataSource):
 if __name__ == "__main__":
     from quant_lab.config import TEMP_DIR
     TEMP_DIR.parent.mkdir(parents=True, exist_ok=True)
-    Y = YahooPrices("AAPL")
+    Y = YahooPrices(ticker="AAPL")
     raw = Y.fetch()
     # TODO: TEMP_DIR 名字像目录但这里当成 csv 文件路径使用，建议确认 config 里它到底是文件还是目录
     raw.to_csv(TEMP_DIR, index = False,encoding = "utf-8")
