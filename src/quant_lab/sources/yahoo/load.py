@@ -14,7 +14,7 @@ from psycopg import sql
 
 from quant_lab.config import SCHEMA_OLCHV, SCHEMA_OLCHV_ADJ
 from quant_lab.connection import get_pgsql
-from quant_lab.error import YahooLo
+from quant_lab.error import SchemaInitializationError, YahooLoadError
 from quant_lab.sources.yahoo.columns import (
     ADJ_PRICE_COLUMNS,
     RAW_PRICE_COLUMNS,
@@ -62,32 +62,13 @@ def init_pg_schema() -> None:
         with get_pgsql() as conn, conn.cursor() as cur:
             for statement in schema_statements:
                 cur.execute(statement)          # type: ignore[reportArgumentType]  # 来自可信的本地 schema 文件, 非拼接字符串
-    except psycopg.errors as exc:
-        raise sc
-
-
+    except psycopg.Error as exc:
+        raise SchemaInitializationError(f"Yahoo 价格表初始化失败: {exc}") from exc
 
     logger.success(
         "成功初始化两个数据库表格:"
         "[market_data.daily_prices], [market_data.adj_daily_prices]"
     )
-
-
-def _build_upsert_sql(table: str, col: list[str]) -> str:
-    """拼一条 upsert SQL, 长这样(以 daily_prices 为例, 省略了中间几列):
-
-        INSERT INTO market_data.daily_prices (ticker, trade_date, open, ...)
-        VALUES (%s, %s, %s, ...)
-        ON CONFLICT (ticker, trade_date) DO UPDATE SET
-            open = EXCLUDED.open, ...
-
-    EXCLUDED 指"这次想插入、但因为主键冲突被拒绝的那一行"——
-    `col = EXCLUDED.col` 就是"用这次抓到的新值覆盖旧值"。
-    ticker/trade_date 是主键, 冲突判断靠它俩, 不需要(也不能)出现在 SET 里。
-    """
-    ...
-
-
 
 def load_prices(prices: pd.DataFrame,
                 *,
