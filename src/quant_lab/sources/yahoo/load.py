@@ -85,16 +85,10 @@ def load_prices(prices: pd.DataFrame,
         所以用 DO UPDATE。
     """
 
-    table = "market_data.adj_daily_prices" if adjusted else "market_data.daily_prices"
+    if not isinstance(adjusted, bool):
+        raise TypeError("adjusted 必须是 bool")
 
-    if adjusted:
-        cols = ["ticker", "trade_date", "open", "high", "low", "close", "volume"]
-    else:
-        cols = ["ticker", "trade_date", "open", "high", "low", "close",
-                "adj_close", "volume", "dividends", "stock_splits"]
-
-    ...
-
+    
     
 
 
