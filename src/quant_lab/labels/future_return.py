@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import pandas as pd
 
+
 def make_label(
         df          : pd.DataFrame,
         n_periods   : int = 5,
