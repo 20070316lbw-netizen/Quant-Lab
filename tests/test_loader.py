@@ -1,113 +1,111 @@
-import pytest
+from __future__ import annotations
+
+from datetime import date
+from typing import Any
+
 import pandas as pd
+import pandas.testing as pdt
+import pytest
 from pydantic import ValidationError
-import quant_lab.connection as connection_module
-from quant_lab.connection import get_duckdb
-from quant_lab.data.loader import RangeQuery, loader, build_sql
-from quant_lab.data.schema_registry import TABLES
-from quant_lab.storage import initialize_schema
+
+import quant_lab.data.loader as loader_module
+from quant_lab.data.loader import Query, build_sql, loader
 
 
-@pytest.fixture(autouse=True)
-def isolated_duckdb(tmp_path, monkeypatch):
-    database_path = tmp_path / "loader.duckdb"
-    monkeypatch.setattr(connection_module, "DATABASE_PATH", database_path)
-    initialize_schema("duckdb")
-    with get_duckdb() as con:
-        con.execute(
-            """
-            INSERT INTO prices
-                (date, ticker, open, high, low, close, volume)
-            VALUES
-                ('2024-01-02', 'AAPL', 185.0, 188.0, 183.0, 187.0, 100)
-            """
-        )
-
-
-def test_range_query_valid():
-    # 测试合法的 RangeQuery 请求
-    req = RangeQuery(
-        table="prices",
-        columns=["open", "close"],
-        start="2024-01-02",
-        end="2024-01-05"
+def make_query(*, columns: list[str] | None = None) -> Query:
+    return Query(
+        place="market_data",
+        name="daily_prices",
+        columns=columns or ["close"],
+        start="2025-01-01",
+        end="2025-01-31",
     )
-    assert req.table == "prices"
-    assert req.columns == ["open", "close"]
-    assert req.start == "2024-01-02"
-    assert req.end == "2024-01-05"
-
-    # 确保 select_columns 包含索引和请求列，且无重复值
-    expected_cols = list(dict.fromkeys(TABLES["prices"].index + ["open", "close"]))
-    assert req.select_columns == expected_cols
 
 
-def test_build_sql():
-    # 测试 SQL 语句的动态生成
-    req = RangeQuery(
-        table="prices",
-        columns=["open", "close"],
-        start="2024-01-02",
-        end="2024-01-05"
+def test_query_accepts_registered_table_and_columns() -> None:
+    request = make_query(columns=["close", "volume"])
+
+    assert request.name == "daily_prices"
+    assert request.columns == ["close", "volume"]
+
+
+def test_query_reports_invalid_table_name() -> None:
+    with pytest.raises(ValidationError) as exc_info:
+        Query(
+            place="market_data",
+            name="prices",  # type: ignore[arg-type]
+            columns=["close"],
+            start="2025-01-01",
+            end="2025-01-31",
+        )
+
+    assert exc_info.value.errors()[0]["loc"] == ("name",)
+    assert "daily_prices" in str(exc_info.value)
+
+
+def test_query_rejects_columns_outside_registered_table() -> None:
+    with pytest.raises(ValidationError, match="daily_prices not support"):
+        make_query(columns=["close", "unknown_column"])
+
+
+def test_build_sql_uses_registered_table_and_date_range_placeholders() -> None:
+    request = make_query()
+
+    statement = " ".join(build_sql(request).as_string(None).split())
+
+    assert statement == (
+        'SELECT "ticker", "trade_date", "close" '
+        'FROM "market_data"."daily_prices" '
+        'WHERE "trade_date" BETWEEN %s AND %s '
+        'ORDER BY "trade_date", "ticker"'
     )
-    sql = build_sql(req)
-    assert "SELECT date, ticker, open, close" in sql
-    assert "FROM prices" in sql
-    assert "WHERE date BETWEEN ? AND ?" in sql
-    assert "ORDER BY date, ticker" in sql
 
 
-def test_loader_execution():
-    # 测试 loader 能否正常在 DuckDB 中执行并返回期望的 MultiIndex DataFrame
-    req = RangeQuery(
-        table="prices",
-        columns=["open", "close"],
-        start="2024-01-02",
-        end="2024-01-05"
+def test_loader_returns_trade_date_ticker_multiindex(monkeypatch) -> None:
+    rows = [
+        ("AAPL", date(2025, 1, 2), 243.85, 1000),
+        ("MSFT", date(2025, 1, 2), 418.79, 2000),
+    ]
+
+    class FakeCursor:
+        def __enter__(self) -> FakeCursor:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def execute(self, query: object, params: object) -> None:
+            return None
+
+        def fetchall(self) -> list[tuple[Any, ...]]:
+            return rows
+
+    class FakeConnection:
+        def __enter__(self) -> FakeConnection:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def cursor(self) -> FakeCursor:
+            return FakeCursor()
+
+    def fake_get_pgsql(*, read_only: bool = False) -> FakeConnection:
+        assert read_only is True
+        return FakeConnection()
+
+    monkeypatch.setattr(loader_module, "get_pgsql", fake_get_pgsql)
+
+    result = loader(request=make_query(columns=["close", "volume"]))
+    expected = pd.DataFrame(
+        {"close": [243.85, 418.79], "volume": [1000, 2000]},
+        index=pd.MultiIndex.from_tuples(
+            [
+                (date(2025, 1, 2), "AAPL"),
+                (date(2025, 1, 2), "MSFT"),
+            ],
+            names=["trade_date", "ticker"],
+        ),
     )
-    df = loader(req)
 
-    # 验证返回的是 DataFrame 且不是空的
-    assert isinstance(df, pd.DataFrame)
-    if not df.empty:
-        # 验证索引是 MultiIndex，且名称为 ['date', 'ticker']
-        assert isinstance(df.index, pd.MultiIndex)
-        assert df.index.names == ["date", "ticker"]
-        # 验证返回的列除了被做成索引的列外，只有请求的 columns (open, close)
-        assert list(df.columns) == ["open", "close"]
-
-
-def test_invalid_table_validation():
-    # 验证无效的表名会导致 Pydantic ValidationError，而不是 KeyError 异常崩溃
-    with pytest.raises(ValidationError) as exc_info:
-        RangeQuery(
-            table="invalid_table_name",  # type: ignore
-            columns=["open"],
-            start="2024-01-01",
-            end="2024-01-05"
-        )
-    # 错误应当归属于 table 字段校验
-    assert "table" in str(exc_info.value)
-
-
-def test_invalid_columns_validation():
-    # 验证无效的列名会被 field_validator 拦截并报 ValueError
-    with pytest.raises(ValidationError) as exc_info:
-        RangeQuery(
-            table="prices",
-            columns=["open", "invalid_column_field"],
-            start="2024-01-01",
-            end="2024-01-05"
-        )
-    assert "prices 不支持字段: ['invalid_column_field']" in str(exc_info.value)
-
-
-def test_missing_table_validation():
-    # 验证缺失 table 时，不会因为 validate_columns 中 TABLES[table] 访问而报 KeyError
-    with pytest.raises(ValidationError) as exc_info:
-        RangeQuery(
-            columns=["open"],  # type: ignore (缺少 table)
-            start="2024-01-01",
-            end="2024-01-05"
-        )
-    assert "Field required" in str(exc_info.value)
+    pdt.assert_frame_equal(result, expected)

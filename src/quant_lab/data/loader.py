@@ -1,144 +1,158 @@
-"""数据库内代码为 RangeIndex , 为了让数据转化为 MultIndex, 我们在此采取只读策略输出 df"""
+"""从 PostgreSQL 读取研究数据，并整理成带业务索引的 DataFrame
+
+原始输入
+   ↓
+model_validator(mode="before")     检查/整理整包原始数据
+   ↓
+field_validator(mode="before")     整理某个字段的原始值
+   ↓
+Pydantic 核心验证                 按类型注解转换、检查类型和 Field 约束
+   ↓
+field_validator(mode="after")      检查已经转换好的单个字段
+   ↓
+model_validator(mode="after")      检查字段之间的关系
+   ↓
+最终 BaseModel 对象
+"""
+
 from __future__ import annotations
 
-from pprint import pprint
-from typing import Literal
+from typing import Self
 
 import pandas as pd
-from pydantic import BaseModel, field_validator
+from loguru import logger
+from psycopg import sql
+from pydantic import BaseModel, field_validator, model_validator
 
-from quant_lab.connection import get_duckdb
-from quant_lab.data.schema_registry import TABLES
-
-"""
-Literal 非常坑:
-    * Literal[...] 只能写“字面量”
-    * 不能塞变量
-    * 不能引用 runtime dict
-    * 不能动态展开
-
-为什么有 Literal 呢, 因为他设计出来是为了给类型检查器 (mypy / pyright) 看的 “编译期信息”
-而不是运行时逻辑, 同理,他不做检查,因此要求:
-    * 必须是 静态可解析的值
-    * 不能依赖变量（因为变量在运行时才知道）
-
-所以我们我们不能直接 `Literal{TABLES}`
-
-设计分三层:
-    * 表是第一层分类 (Table)        -- src/quant_lab/data/schema_registry.py
-
-    * 字段是第二层约束 (Schema)
-        * 不能用动态 Literal
-
-    * 查询对象是第三层 (Request)
-
-    * 所有关系“只在一个地方定义”
-"""
-TableName = Literal["prices"]       # 对应 Table 约束, 入口白名单
+from quant_lab.connection import get_pgsql
+from quant_lab.data.schema_registry import VALID, ValidTableName
 
 
-# 第三层 Request, 查询请求对象, 在请求进入数据库之前做结构化检查
-# 从 `prices` 中, 在某个日期范围内取某些字段
-class RangeQuery(BaseModel):
-    table:      TableName       # 合法值只有 `price`
-    columns:    list[str]
-    start:      str
-    end:        str
+class Query(BaseModel):
+    """
+    查询内容填写
+    
+    place   : 表的位置, prices 类表的位置在 "market_data"
+    name    : 查询的表名字, 通过 situa 定位后获得,
+    columns : 查询表内的列
+    start   : 查询开始日期
+    end     : 查询结束日期
 
-    # 逻辑校验 (依赖 TABLES), `columns` 的合法性不是固定, 而是取决于 `table`
-    # `columns` 应该根据 `table` 去 `TABLE` 里面找对应 `schema`
+    包含对内容的检查:
+        1. place:
+            使用 @model_validator(mode="after")
+            对表的位置进行检查, 在 VALID 内做校验, 若不通过则直接 raise
+
+        2. name:
+            使用 Literal 做检验
+
+        3. columns:
+            使用 @field_validator("columns") 做检验, 若不通过则直接 raise
+    """
+    place   : str
+    name    : ValidTableName
+    columns : list[str]
+    start   : str
+    end     : str
+
+    @model_validator(mode="after")
+    def _check_place(self) -> Self:
+        """对 place 进行检查"""
+        register_place = VALID[self.name].place
+        logger.info(
+            f"checking place: input={self.place!r}, "
+            f"expected={register_place!r}"
+        )
+
+        if self.place != register_place:
+            raise ValueError(
+                f"`place` should be {register_place!r}"
+            )
+
+        logger.success(f"{self.place!r} PASSED !!!")
+        return self
+
+
+        
     @field_validator("columns")
     @classmethod
-    def validate_columns(cls, v, info) -> list | str:
-        table = info.data.get("table")
+    def _check_columns(cls,
+                       value: list[str],
+                       info                 # 由 pydantic 提供
+                       ) -> list:
+        """对 columns 做检查"""
 
-        if not table or table not in TABLES:
-            return v
+        checked_name = info.data.get("name")
+        if checked_name is None:
+            return value
 
-        schema = TABLES[table]      # 确认哪张表, 再拿出规则检查传入字段是否属于它
+        valid_columns = VALID[checked_name].columns
+        invalid = [column for column in value if column not in valid_columns]
 
-        invalid = [c for c in v if c not in schema.columns]
         if invalid:
-            raise ValueError(f"{table} 不支持字段: {invalid}")
+            raise ValueError(
+                f"{checked_name} not support {invalid}"
+            )
+        
+        return value
 
-        return v
+def build_sql(request: Query) -> sql.Composed:
+    """拼接需要的 SQL 语句"""
 
-
-    @property
-    def select_columns(self) -> list:
-        schema = TABLES[self.table]
-        return list(dict.fromkeys(schema.index + self.columns))
-
-
-
-def build_sql(req: RangeQuery) -> str:
-    schema = TABLES[req.table]
-    cols = ", ".join(req.select_columns)
-
-    # 我们的入库顺序是: ["date", "ticker", "open", "high", "low", "close", "volume"]
-    # 第一个是时间列, 第二个是代码列
-    # 动态获取索引
-    date_col = schema.index[0]
-    ticker_col = schema.index[1]
-
-    return f"""
-        SELECT {cols}
-        FROM {schema.name}
-        WHERE {date_col} BETWEEN ? AND ?
-        ORDER BY {date_col}, {ticker_col}
-    """
-
-def loader(req: RangeQuery):
-    with get_duckdb(read_only=True) as con:
-        sql = build_sql(req)
-        df = con.execute(sql, [req.start, req.end]).df()
-
-        return df.set_index(TABLES[req.table].index)
-    
-
-def load_price_panel(
-        start       : str   = "2016-06-30",
-        end         : str   = "2026-06-30",
-        date_col    : str   = "date",
-        ticker_col  : str   = "ticker"
-) -> pd.DataFrame:
-    """读取 prices 表全部行情字段, 做类型转换后设置两层 index (date, ticker)
-
-    注意: loader() 内部已经把 date/ticker 设成了 index (见 TABLES[table].index),
-    所以这里拿到的 df 是没有 date/ticker 列的, 要用 index.get_level_values 取值,
-    不能再用 df["date"] 这种写法(会 KeyError)。
-    """
-    schema = TABLES["prices"]
-
-    # --------------------------- 数据读取,             return df
-    # select_columns 会自动把 index 列(date/ticker)拼进去, 这里只需要传
-    # 非 index 的行情字段(open/high/low/close/volume), 否则会漏掉真正的数据列
-    price_columns = [c for c in schema.columns if c not in schema.index]
-
-    req = RangeQuery(
-        table=schema.name,
-        columns=price_columns,
-        start=start,
-        end=end,
+    table_info = VALID[request.name]
+    request_columns = sql.SQL(", ").join(
+        sql.Identifier(column) for column in request.columns
     )
-    df = loader(req)
-    # ---------------------------
 
-    # --------------------------- 类型转换 + 重建 MultIndex   return df
-    dates   = pd.to_datetime(df.index.get_level_values(date_col))
-    tickers = df.index.get_level_values(ticker_col).astype("category")
+    date_type, ticker = table_info.index
 
-    df.index = pd.MultiIndex.from_arrays([dates, tickers], names=[date_col, ticker_col])
-    df = df.sort_index()
+    return sql.SQL(
+        "SELECT {ticker}, {date_type}, {columns} FROM {place}.{name} "
+        "WHERE {date_type} BETWEEN %s AND %s "
+        "ORDER BY {date_type}, {ticker} "
+    ).format(
+        columns     = request_columns,
+        place       = sql.Identifier(table_info.place),
+        name        = sql.Identifier(table_info.name),
+        date_type   = sql.Identifier(date_type),
+        ticker      = sql.Identifier(ticker),
+    )
 
-    return df
+def loader(*, request: Query) -> pd.DataFrame:
+    """以只读的形式查询并且返回 MultINdex DataFrame"""
+
+    query = build_sql(request)
+
+    with get_pgsql(read_only=True) as conn, conn.cursor() as cur:
+        cur.execute(query, (request.start, request.end))
+        row = cur.fetchall()
+
+    dataframe = pd.DataFrame(
+        row,
+        columns=["ticker", "trade_date", *request.columns],
+        )
+
+    return dataframe.set_index(["trade_date", "ticker"])
+
+    
+        
 
 
 if __name__ == "__main__":
-    df = load_price_panel()
-    pprint(df)
+    query = Query(
+        place="market_data",
+        name="daily_prices",
+        columns=["close", ],
+        start="2025-01-01",
+        end="2025-01-31",
+    )
+    logger.info(query)
+
+    built_sql = build_sql(query)
+    with get_pgsql(read_only=True) as conn, conn.cursor() as cur:
+        check = built_sql.as_string(cur)
+        logger.info(check)
+
+    df = loader(request=query)
+    print(df)
     
-
-
-
-

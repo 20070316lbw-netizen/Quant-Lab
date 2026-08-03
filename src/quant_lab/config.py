@@ -15,8 +15,32 @@ ARTIFACTS_DIR = PACKAGE_ROOT / "artifacts"          # 训练好的模型存这�
 
 
 # 类变量
-OHLCV_COLUMNS = ["date", "ticker", "open", "high", "low", "close", "volume"]
-INDEX_COLUMNS = ["date", "ticker"]
+INDEX_COLUMNS = ["trade_date", "ticker"]
+
+# 未复权表保留 Yahoo 返回的 adj_close 和公司行动。
+RAW_PRICE_COLUMNS = (
+    "trade_date",
+    "ticker",
+    "open",
+    "high",
+    "low",
+    "close",
+    "adj_close",
+    "volume",
+    "dividends",
+    "stock_splits",
+)
+
+# 复权表中的 OHLC 已经全部经过拆股、分红调整，不再单独保存 adj_close。
+ADJ_PRICE_COLUMNS = (
+    "trade_date",
+    "ticker",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+)
 
 # schema 变量
 SCHEMA_UNIVERSE     = PROJECT_ROOT / "db" / "schema" / "0001_sp500_universe.sql"
