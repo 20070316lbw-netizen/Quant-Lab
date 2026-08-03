@@ -6,12 +6,12 @@
 
 ## Continuous Integration
 
-每次推送代码或创建 Pull Request 时，GitHub Actions 会安装项目依赖并运行 PostgreSQL loader 的离线测试。
+每次推送代码或创建 Pull Request 时，GitHub Actions 会安装项目依赖并运行数据加载、Universe 抓取和 Yahoo 价格契约的离线测试。
 
 本地运行同一组测试：
 
 ```bash
-uv run pytest tests/test_loader.py -q
+uv run pytest tests/test_loader.py tests/test_universe_fetch.py tests/test_yahoo_prices.py -q
 ```
 
 ## Research

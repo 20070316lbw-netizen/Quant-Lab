@@ -6,7 +6,8 @@ from pathlib import Path
 import duckdb
 import pandas as pd
 
-from quant_lab.sources.yahoo.fetch import OHLCV_COLUMNS, OHLCV_COLUMNS_ADJ, Yahoo
+from quant_lab.sources.yahoo.columns import ADJ_PRICE_COLUMNS, RAW_PRICE_COLUMNS
+from quant_lab.sources.yahoo.fetch import Yahoo
 
 
 def test_get_prices_uses_trade_date_and_adj_close(monkeypatch) -> None:
@@ -37,7 +38,7 @@ def test_get_prices_uses_trade_date_and_adj_close(monkeypatch) -> None:
 
     prices = Yahoo(ticker="AAPL")._get_prices()
 
-    assert list(prices.columns) == OHLCV_COLUMNS
+    assert tuple(prices.columns) == RAW_PRICE_COLUMNS
     assert prices.loc[0, "trade_date"] == date(2026, 1, 2)
     assert prices.loc[0, "ticker"] == "AAPL"
     assert prices.loc[0, "adj_close"] == 104.0
@@ -78,5 +79,5 @@ def test_price_schemas_keep_raw_and_adjusted_prices_separate() -> None:
             ).fetchall()
         ]
 
-    assert raw_columns == OHLCV_COLUMNS
-    assert adjusted_columns == OHLCV_COLUMNS_ADJ
+    assert tuple(raw_columns) == RAW_PRICE_COLUMNS
+    assert tuple(adjusted_columns) == ADJ_PRICE_COLUMNS
