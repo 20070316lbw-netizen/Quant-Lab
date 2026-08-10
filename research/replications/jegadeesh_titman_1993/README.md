@@ -1,1 +1,0 @@
-## 第一个复现目标 -- jegadeesh_titman_1993
